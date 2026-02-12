@@ -133,7 +133,7 @@
         margin-top: 10px;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 12px;
+        gap: 10px;
         max-width: 450px;
         width: 100%;
     }
@@ -221,7 +221,7 @@
     // B. Messages spécifiques par jour (Optionnel)
     // Si vous ne mettez rien pour un jour, le message "default" s'affichera.
     const dailyMessages = {
-        default: "Bravi mimi, je t'aime (uniquement car tu as réussi ce sudoku). Passe une bonne journée <3"
+        default: "Bravo mimi, je t'aime (uniquement car tu as réussi ce sudoku). Passe une bonne journée <3"
     };
 
     // --- 2. INITIALISATION & DATES ---
@@ -299,7 +299,7 @@
         
         // 2. On vise environ 24 indices restants (Niveau Difficile/Expert)
         // (La version précédente en laissait ~30)
-        const targetClues = 24; 
+        const targetClues = 27; 
         
         // On essaie de retirer des chiffres tant qu'on en a trop
         // On ajoute une limite de sécurité (attempts) pour ne pas boucler à l'infini
