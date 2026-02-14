@@ -6,16 +6,15 @@
     <title>Daily Pink Sudoku</title>
     <style>
     :root {
-        /* On garde les mêmes teintes, mais on jouera sur leur transparence */
-        --accent: #d63384;         /* Rose foncé */
-        --accent-rgb: 214, 51, 132; /* Version RGB pour la transparence */
-        --highlight: #ffc2d1;      /* Sélection */
+        --accent: #d63384;
+        --accent-rgb: 214, 51, 132;
+        --highlight: #ffc2d1;
         --error: #ff4d4d;
-        --text-main: #5a2a38;      /* Couleur du texte */
+        --text-main: #5a2a38;
+        --note-color: #5a2a38;
     }
 
     body {
-        /* Fond d'écran géré par JS */
         background-color: #ffe6ea; 
         background-size: cover;
         background-position: center;
@@ -28,25 +27,21 @@
         min-height: 100vh;
         margin: 0;
         padding: 20px;
-        box-sizing: border-box; /* Important pour éviter les débordements */
+        box-sizing: border-box;
     }
 
-    /* Conteneur principal : Plus transparent et plus flouté */
     .game-container {
-        /* Fond blanc à 75% d'opacité (plus transparent qu'avant) */
         background-color: rgba(255, 255, 255, 0.75);
-        /* Flou plus important sur l'image derrière pour la lisibilité */
         backdrop-filter: blur(10px); 
-        -webkit-backdrop-filter: blur(10px); /* Pour Safari */
+        -webkit-backdrop-filter: blur(10px);
         padding: 25px;
         border-radius: 20px;
-        /* Bordure fine et lumineuse */
         border: 1px solid rgba(255, 255, 255, 0.5);
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
         display: flex;
         flex-direction: column;
         align-items: center;
-        max-width: 95%; /* S'adapte aux petits écrans */
+        max-width: 95%;
     }
 
     h1 {
@@ -54,21 +49,18 @@
         text-transform: uppercase;
         letter-spacing: 2px;
         margin-top: 0;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Légère ombre pour détacher le titre */
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    /* --- LA GRILLE TYPE "VERRE" --- */
     #sudoku-board {
         display: grid;
         grid-template-columns: repeat(9, 1fr);
-        /* On enlève le gap solide et le fond opaque */
         gap: 0; 
         background-color: transparent;
-        /* Bordure extérieure fine et semi-transparente */
         border: 2px solid rgba(var(--accent-rgb), 0.5);
-        border-radius: 12px; /* Coins arrondis pour le plateau */
-        overflow: hidden; /* Important pour les coins arrondis */
-        box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.2); /* Lueur rose */
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.2);
         width: 100%;
         max-width: 450px;
         aspect-ratio: 1;
@@ -76,9 +68,7 @@
     }
 
     .cell {
-        /* Fond des cases : Blanc très transparent */
         background-color: rgba(255, 255, 255, 0.4);
-        /* Petit flou interne pour lisser le fond */
         backdrop-filter: blur(3px);
         display: flex;
         align-items: center;
@@ -88,81 +78,100 @@
         cursor: pointer;
         user-select: none;
         color: var(--text-main);
-        /* Bordures internes très fines et discrètes */
         border-right: 1px solid rgba(var(--accent-rgb), 0.2);
         border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
-        transition: all 0.2s ease;
+        position: relative; /* Pour les notes */
+        transition: background-color 0.2s ease;
     }
 
-    /* --- DEFINITION DES BLOCS 3x3 (Bordures plus épaisses) --- */
-    /* On utilise !important pour être sûr que ces bordures prennent le dessus */
+    /* --- BORDURES ÉPAISSES (CORRIGÉES) --- */
     .cell:nth-child(3n) { border-right: 2px solid rgba(var(--accent-rgb), 0.7) !important; }
-    /* Retirer la bordure tout à droite */
     .cell:nth-child(9n) { border-right: none !important; }
-    
-    /* Bordures horizontales 3x3 */
-    .cell[data-row="2"], .cell[data-row="5"] { 
-        border-bottom: 2px solid rgba(var(--accent-rgb), 0.7) !important; 
-    }
-    /* Retirer la bordure tout en bas */
+    .cell.border-bottom { border-bottom: 2px solid rgba(var(--accent-rgb), 0.7) !important; }
+    /* La dernière ligne n'a pas besoin de bordure en bas */
     .cell[data-row="8"] { border-bottom: none !important; }
 
-
-    /* --- ETATS DES CASES --- */
-    /* Cases pré-remplies : un peu plus opaques pour les distinguer */
     .cell.fixed { 
         color: var(--text-main); 
-        background-color: rgba(255, 240, 245, 0.6); /* Rose très pâle transparent */
+        background-color: rgba(255, 240, 245, 0.6); 
         font-weight: 900;
     }
 
-    /* Case sélectionnée : Lueur rose */
     .cell.selected { 
-        background-color: rgba(255, 194, 209, 0.6); /* Couleur highlight transparente */
+        background-color: rgba(255, 194, 209, 0.6); 
         box-shadow: inset 0 0 10px rgba(var(--accent-rgb), 0.3);
     }
 
-    /* Erreur : Rouge lumineux */
     .cell.wrong { 
         color: var(--error);
         text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
     }
 
-    /* --- CLAVIER ET BOUTONS (Style "Soft") --- */
+    /* --- STYLE DES NOTES (Crayon) --- */
+    .notes-grid {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        pointer-events: none;
+    }
+    .note-num {
+        font-size: 0.6rem; /* Tout petit */
+        color: #888;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: normal;
+    }
+
+    /* --- CLAVIER --- */
     .numpad {
         margin-top: 10px;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 10px;
+        gap: 8px;
         max-width: 450px;
         width: 100%;
     }
 
     .num-btn {
-        /* Boutons semi-transparents */
         background-color: rgba(var(--accent-rgb), 0.85);
         color: white;
         border: 1px solid rgba(255,255,255,0.3);
-        padding: 12px;
+        padding: 12px 0; /* Ajusté */
         font-size: 1.2rem;
-        border-radius: 12px; /* Plus arrondis */
+        border-radius: 12px;
         cursor: pointer;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         transition: transform 0.1s, background-color 0.2s;
         font-family: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .num-btn:hover { background-color: rgba(var(--accent-rgb), 1); }
-    .num-btn:active { transform: scale(0.95); box-shadow: 0 2px 3px rgba(0,0,0,0.1); }
+    .num-btn:active { transform: scale(0.95); }
     .eraser-btn { background-color: rgba(168, 93, 119, 0.85) !important; }
+    
+    /* Bouton Crayon */
+    .pencil-btn { 
+        background-color: #b0b0b0 !important; 
+        font-size: 1rem;
+    }
+    .pencil-btn.active {
+        background-color: #ffd700 !important; /* Doré quand actif */
+        color: #5a2a38 !important;
+        border: 2px solid #fff;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
 
-    /* Modal de victoire style verre */
+    /* Modal */
     .modal {
         display: none;
         position: fixed;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
-        /* Fond verre */
         background: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(15px);
         padding: 40px;
@@ -201,7 +210,10 @@
             <button class="num-btn" onclick="inputNum(7)">7</button>
             <button class="num-btn" onclick="inputNum(8)">8</button>
             <button class="num-btn" onclick="inputNum(9)">9</button>
-            <button class="num-btn" style="background-color: #a85d77;" onclick="inputNum(null)">⌫</button>
+            <button class="num-btn eraser-btn" onclick="inputNum(null)">⌫</button>
+        </div>
+        <div class="numpad" style="margin-top: 5px; grid-template-columns: 1fr;">
+            <button class="num-btn pencil-btn" id="pencil-btn" onclick="togglePencil()">✎ Mode Crayon</button>
         </div>
     </div>
 
@@ -212,26 +224,18 @@
     </div>
 
 <script>
-    // --- 1. CONFIGURATION ---
-
-    // A. Vos images en vrac
-    // Mettez vos images dans un dossier "images" et nommez-les 1.jpg, 2.jpg, etc.
-    const totalImagesInFolder = 20; // <--- CHANGEZ CE CHIFFRE selon votre nombre de photos
-
-    // B. Messages spécifiques par jour (Optionnel)
-    // Si vous ne mettez rien pour un jour, le message "default" s'affichera.
+    // --- CONFIGURATION ---
+    const totalImagesInFolder = 20; 
     const dailyMessages = {
         default: "Bravo mimi, je t'aime (uniquement car tu as réussi ce sudoku). Passe une bonne journée <3"
     };
 
-    // --- 2. INITIALISATION & DATES ---
+    // --- INITIALISATION ---
     const startDate = new Date("2026-02-14");
     const urlParams = new URLSearchParams(window.location.search);
     let dayParam = parseInt(urlParams.get('day')) || 1;
 
-    // --- 3. GÉNÉRATEUR ALÉATOIRE (RNG) ---
-    // Cette fonction garantit que si on recharge la page le Jour 1, 
-    // on retombe sur la MÊME grille et la MÊME image (pas de changement intempestif).
+    // --- RNG ---
     function mulberry32(a) {
         return function() {
             var t = a += 0x6D2B79F5;
@@ -240,92 +244,62 @@
             return ((t ^ t >>> 14) >>> 0) / 4294967296;
         }
     }
-    // On initialise le hasard avec le numéro du jour
     const rng = mulberry32(dayParam + 2026);
 
-    // --- 4. CHOIX DE L'IMAGE ET DU TEXTE ---
-    
-    // 1. Choix de l'image : on tire un nombre entre 1 et totalImagesInFolder
-    // Math.floor(rng() * max) donne un nombre entre 0 et max-1. On ajoute +1.
+    // --- VISUELS ---
     const randomImageIndex = Math.floor(rng() * totalImagesInFolder) + 1;
-    
-    // On construit le chemin : images/5.jpg
-    const imagePath = `images/${randomImageIndex}.jpg`;
-    
-    // On l'applique au body
-    document.body.style.backgroundImage = `url('${imagePath}')`;
-
-    // 2. Choix du message
+    document.body.style.backgroundImage = `url('images/${randomImageIndex}.jpg')`;
     const victoryMessage = dailyMessages[dayParam] || dailyMessages.default;
 
-
-    // --- 5. LOGIQUE DU JEU (Reste identique) ---
-    
-    // Mise à jour date interface
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + (dayParam - 1));
     document.getElementById('date-display').innerText = currentDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     document.getElementById('title').innerText = `Jeu n°${dayParam}`;
 
+    // --- LOGIQUE JEU ---
     let solution = [], puzzle = [], selectedCell = null;
+    let notes = {}; // Stocke les notes par index "r-c" : "0-1" -> [1, 9]
+    let isPencilMode = false;
+
+    function togglePencil() {
+        isPencilMode = !isPencilMode;
+        const btn = document.getElementById('pencil-btn');
+        if (isPencilMode) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
 
     function generateBoard() {
         const base = [[1,2,3,4,5,6,7,8,9],[4,5,6,7,8,9,1,2,3],[7,8,9,1,2,3,4,5,6],[2,3,1,5,6,4,8,9,7],[5,6,4,8,9,7,2,3,1],[8,9,7,2,3,1,5,6,4],[3,1,2,6,4,5,9,7,8],[6,4,5,9,7,8,3,1,2],[9,7,8,3,1,2,6,4,5]];
         let nums = [1,2,3,4,5,6,7,8,9];
-        // Mélange des chiffres
         for (let i = nums.length - 1; i > 0; i--) {
             const j = Math.floor(rng() * (i + 1));
             [nums[i], nums[j]] = [nums[j], nums[i]];
         }
         let grid = base.map(row => row.map(n => nums[n-1]));
-        // Mélange des rangées
         for (let i = 0; i < 9; i += 3) {
             const rowPerm = [0, 1, 2].sort(() => rng() - 0.5);
             const band = [grid[i], grid[i+1], grid[i+2]];
             grid[i] = band[rowPerm[0]]; grid[i+1] = band[rowPerm[1]]; grid[i+2] = band[rowPerm[2]];
         }
-        // Transposition
         if (rng() > 0.5) grid = grid[0].map((_, c) => grid.map(r => r[c]));
         return grid;
     }
 
     function createPuzzle(solved) {
         let p = JSON.parse(JSON.stringify(solved));
-        
-        // --- NOUVELLE LOGIQUE "HARD MODE" ---
-        
-        // 1. On part de 81 cases remplies
         let clues = 81;
-        
-        // 2. On vise environ 24 indices restants (Niveau Difficile/Expert)
-        // (La version précédente en laissait ~30)
         const targetClues = 27; 
-        
-        // On essaie de retirer des chiffres tant qu'on en a trop
-        // On ajoute une limite de sécurité (attempts) pour ne pas boucler à l'infini
         let attempts = 300; 
 
         while (clues > targetClues && attempts > 0) {
             let r = Math.floor(rng() * 9);
             let c = Math.floor(rng() * 9);
-            
-            // Calcul de la case symétrique (miroir central)
-            let symR = 8 - r;
-            let symC = 8 - c;
+            let symR = 8 - r; let symC = 8 - c;
 
-            // Si la case (et sa symétrique) n'est pas déjà vide
             if (p[r][c] !== 0) {
-                
-                // On retire le chiffre
-                p[r][c] = 0;
-                clues--;
-
-                // Pour faire "Pro" et dur, on retire aussi le symétrique si c'est une case différente
+                p[r][c] = 0; clues--;
                 if (r !== symR || c !== symC) {
-                    if (p[symR][symC] !== 0) {
-                        p[symR][symC] = 0;
-                        clues--;
-                    }
+                    if (p[symR][symC] !== 0) { p[symR][symC] = 0; clues--; }
                 }
             }
             attempts--;
@@ -336,6 +310,7 @@
     function initGame() {
         solution = generateBoard();
         puzzle = createPuzzle(solution);
+        notes = {}; // Reset notes
         const boardEl = document.getElementById('sudoku-board');
         boardEl.innerHTML = '';
         
@@ -343,14 +318,24 @@
             for (let c = 0; c < 9; c++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
-                cell.dataset.row = r; cell.dataset.col = c;
-                if ((r+1)%3===0 && r<8) cell.dataset.row = "2"; 
+                // IMPORTANTE CORRECTION : On ne touche pas au dataset pour le style
+                cell.dataset.row = r; 
+                cell.dataset.col = c;
+                
+                // On utilise une classe CSS pour la bordure du bas
+                if ((r+1)%3===0 && r<8) {
+                    cell.classList.add('border-bottom');
+                }
 
                 if (puzzle[r][c] !== 0) {
                     cell.innerText = puzzle[r][c];
                     cell.classList.add('fixed');
                 } else {
                     cell.addEventListener('click', () => selectCell(cell));
+                    // Création du conteneur de notes (vide au début)
+                    const notesGrid = document.createElement('div');
+                    notesGrid.className = 'notes-grid';
+                    cell.appendChild(notesGrid);
                 }
                 boardEl.appendChild(cell);
             }
@@ -367,19 +352,73 @@
         if (!selectedCell) return;
         const r = parseInt(selectedCell.dataset.row);
         const c = parseInt(selectedCell.dataset.col);
+        const key = `${r}-${c}`;
 
+        // GOMME
         if (num === null) {
-            selectedCell.innerText = '';
+            selectedCell.childNodes[0].nodeValue = ''; // Efface le gros chiffre
             puzzle[r][c] = 0;
             selectedCell.classList.remove('wrong');
-        } else {
-            selectedCell.innerText = num;
+            // On efface aussi les notes
+            delete notes[key];
+            renderNotes(selectedCell, key);
+            return;
+        }
+
+        // MODE CRAYON
+        if (isPencilMode) {
+            if (!notes[key]) notes[key] = [];
+            const index = notes[key].indexOf(num);
+            
+            if (index > -1) {
+                notes[key].splice(index, 1); // Enlever si existe
+            } else {
+                notes[key].push(num); // Ajouter si existe pas
+            }
+            renderNotes(selectedCell, key);
+        } 
+        // MODE NORMAL
+        else {
+            // Efface les notes car on met un vrai chiffre
+            delete notes[key]; 
+            renderNotes(selectedCell, key); // Refresh pour vider
+
+            // Met à jour le gros chiffre
+            // Attention: selectedCell a un enfant .notes-grid. 
+            // On veut modifier le texte principal du noeud, pas supprimer l'enfant.
+            // Une façon sûre : vider, remettre la grid, mettre le texte.
+            
+            selectedCell.classList.remove('wrong');
+            
+            // On écrit le chiffre
+            // Astuce: On met le chiffre dans un span ou directement texte, 
+            // mais il faut garder la div .notes-grid présente
+            
+            // Le plus simple : Reconstruire le contenu de la cell
+            const notesGrid = selectedCell.querySelector('.notes-grid');
+            selectedCell.innerText = num; 
+            selectedCell.appendChild(notesGrid); // On remet la grille de notes (vide)
+
             puzzle[r][c] = num;
             if (num !== solution[r][c]) selectedCell.classList.add('wrong');
-            else {
-                selectedCell.classList.remove('wrong');
-                checkWin();
+            else checkWin();
+        }
+    }
+
+    function renderNotes(cell, key) {
+        const notesGrid = cell.querySelector('.notes-grid');
+        notesGrid.innerHTML = ''; // Clear
+        
+        const currentNotes = notes[key] || [];
+        
+        // On crée 9 slots invisibles pour que les chiffres soient bien placés
+        for(let i=1; i<=9; i++) {
+            const span = document.createElement('span');
+            span.className = 'note-num';
+            if(currentNotes.includes(i)) {
+                span.innerText = i;
             }
+            notesGrid.appendChild(span);
         }
     }
 
@@ -389,7 +428,6 @@
                 if (puzzle[r][c] !== solution[r][c]) return;
             }
         }
-        // Injection du message victorieux
         document.getElementById('custom-success-msg').innerText = victoryMessage;
         document.getElementById('win-modal').style.display = 'block';
     }
