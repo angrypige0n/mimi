@@ -6,198 +6,243 @@
     <title>Daily Pink Sudoku</title>
     <style>
     :root {
-        --accent: #d63384;
-        --accent-rgb: 214, 51, 132;
-        --highlight: #ffc2d1;
-        --error: #ff4d4d;
-        --text-main: #5a2a38;
+        --accent: #d63384;         /* Rose intense */
+        --accent-rgb: 214, 51, 132; 
+        --text-main: #4a1a28;      /* Texte foncé lisible */
+        --grid-border: rgba(214, 51, 132, 0.3); /* Lignes fines */
+        --thick-border: #d63384;   /* Lignes épaisses */
     }
 
     body {
-        background-color: #ffe6ea; 
-        /* background-image généré en JS */
+        /* Fond de secours rose */
+        background-color: #ffe6ea;
+        /* Image de fond gérée en JS */
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        color: var(--text-main);
+        
         font-family: 'Courier New', monospace;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center; /* Centre verticalement si l'écran est grand */
+        justify-content: center;
         min-height: 100vh;
-        margin: 0;
+        margin: 0; 
         padding: 10px;
         box-sizing: border-box;
-        /* Empêche le zoom sur mobile au double tap */
-        touch-action: manipulation; 
+        touch-action: manipulation; /* Optimisation mobile */
     }
 
+    /* CONTENEUR PRINCIPAL */
     .game-container {
-        background-color: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px); 
-        -webkit-backdrop-filter: blur(10px);
-        padding: 20px;
+        /* CORRECTION : Beaucoup plus transparent pour voir la photo */
+        background-color: rgba(255, 255, 255, 0.70); 
+        backdrop-filter: blur(5px); /* Flou léger pour garder le texte lisible */
+        -webkit-backdrop-filter: blur(5px);
+        
+        padding: 15px;
         border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        
         display: flex;
         flex-direction: column;
         align-items: center;
         width: 100%;
-        max-width: 450px;
+        /* CORRECTION : Taille max réduite pour être plus compact */
+        max-width: 360px; 
     }
 
     h1 {
         color: var(--accent);
         text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-top: 0;
-        font-size: 1.5rem;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        margin-bottom: 5px;
+        font-size: 1.4rem;
+        margin: 0;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        font-weight: 800;
     }
     
-    #date-display { font-weight: bold; font-size: 0.9rem; }
+    #date-display {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: var(--text-main);
+        margin-bottom: 10px;
+        background-color: rgba(255,255,255,0.4);
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
 
-    /* --- GRILLE --- */
+    /* --- PLATEAU DE JEU --- */
     #sudoku-board {
         display: grid;
         grid-template-columns: repeat(9, 1fr);
-        /* grid-template-rows est inutile si les cellules ont aspect-ratio: 1 */
-        gap: 0; 
-        background-color: transparent;
-        border: 3px solid var(--accent); /* Bordure extérieure plus épaisse */
-        border-radius: 4px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.2);
-        width: 100%;
-        /* Force le conteneur à être carré */
+        /* Force le carré parfait */
         aspect-ratio: 1 / 1;
-        margin: 15px 0;
+        width: 100%;
+        
+        /* Bordure extérieure solide */
+        border: 2px solid var(--accent);
+        background-color: transparent; /* Transparence totale entre les cases */
+        margin-bottom: 15px;
+        
+        /* Astuce pour éviter les doubles bordures qui décalent tout */
+        gap: 0;
     }
 
     .cell {
-        /* LA CORRECTION EST ICI : Force chaque cellule à être carrée */
-        aspect-ratio: 1 / 1; 
+        position: relative;
+        /* Fond case : très transparent */
+        background-color: rgba(255, 255, 255, 0.4); 
         
-        background-color: rgba(255, 255, 255, 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem; /* Gros chiffres */
+        
+        /* Taille police réduite pour s'adapter à la grille compacte */
+        font-size: 1.2rem; 
         font-weight: bold;
+        color: var(--text-main);
         cursor: pointer;
         user-select: none;
-        color: var(--text-main);
-        border-right: 1px solid rgba(var(--accent-rgb), 0.3);
-        border-bottom: 1px solid rgba(var(--accent-rgb), 0.3);
-        position: relative;
-        transition: background-color 0.1s ease;
-        overflow: hidden; /* Empêche tout débordement */
+        
+        /* CORRECTION ALIGNEMENT : 
+           On utilise box-shadow pour les bordures internes.
+           Cela ne prend pas de place (0px) donc ça ne décale jamais la grille. */
+        box-shadow: 
+            1px 0 0 0 var(--grid-border), 
+            0 1px 0 0 var(--grid-border);
     }
 
-    /* --- BORDURES ÉPAISSES (CORRIGÉES) --- */
-    .cell:nth-child(3n) { border-right: 3px solid var(--accent) !important; }
-    .cell:nth-child(9n) { border-right: none !important; }
-    .cell.border-bottom { border-bottom: 3px solid var(--accent) !important; }
-    .cell[data-row="8"] { border-bottom: none !important; }
+    /* --- LIGNES ÉPAISSES 3x3 --- */
+    /* On utilise une ombre portée plus forte pour simuler l'épaisseur sans casser l'alignement */
+    
+    /* Bordure droite épaisse (Colonnes 3 et 6) */
+    .cell:nth-child(3n) {
+        box-shadow: 
+            2px 0 0 0 var(--thick-border), 
+            0 1px 0 0 var(--grid-border);
+        z-index: 1; /* Passe au dessus des autres */
+    }
+    
+    /* Bordure bas épaisse (Lignes 3 et 6) - Géré par classe JS */
+    .cell.border-bottom-thick {
+        box-shadow: 
+            1px 0 0 0 var(--grid-border), 
+            0 2px 0 0 var(--thick-border);
+        z-index: 1;
+    }
 
+    /* Coin intersection épais (Ligne 3/6 ET Col 3/6) */
+    .cell:nth-child(3n).border-bottom-thick {
+        box-shadow: 
+            2px 0 0 0 var(--thick-border), 
+            0 2px 0 0 var(--thick-border);
+        z-index: 2; /* Tout au dessus */
+    }
+    
+    /* On retire les bordures externes droites et basses pour ne pas doubler avec le cadre du board */
+    .cell:nth-child(9n) { box-shadow: 0 1px 0 0 var(--grid-border); } 
+    .cell[data-row="8"] { box-shadow: 1px 0 0 0 var(--grid-border); }
+    .cell:nth-child(9n)[data-row="8"] { box-shadow: none; }
+
+
+    /* --- ÉTATS --- */
     .cell.fixed { 
-        color: #333; 
-        background-color: rgba(230, 230, 230, 0.5); 
+        color: #000;
+        font-weight: 900;
+        background-color: rgba(255, 255, 255, 0.6); /* Un peu plus opaque pour les fixes */
     }
-
+    
     .cell.selected { 
-        background-color: rgba(255, 194, 209, 0.8) !important; 
+        background-color: rgba(214, 51, 132, 0.4) !important;
+        /* Focus visible */
+        outline: 2px solid #fff; 
+        outline-offset: -2px;
     }
 
     .cell.wrong { 
-        color: var(--error);
-        background-color: rgba(255, 0, 0, 0.1);
+        color: #d00;
+        background-color: rgba(255, 0, 0, 0.2);
     }
 
-    /* --- STYLE DES NOTES (Crayon) --- */
+    /* --- NOTES (MODE CRAYON) --- */
     .notes-grid {
         position: absolute;
-        top: 1px; left: 1px; right: 1px; bottom: 1px;
+        top: 0; left: 0; width: 100%; height: 100%;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(3, 1fr);
         pointer-events: none;
     }
     .note-num {
-        /* CORRECTION TAILLE NOTES */
-        font-size: 9px; 
-        line-height: 1;
-        color: #777;
+        /* CORRECTION : Taille minuscule et centrage parfait */
+        font-size: 8px; 
+        color: #444;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: normal;
+        line-height: 0;
     }
 
     /* --- CLAVIER --- */
     .numpad {
-        margin-top: 10px;
+        width: 100%;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
-        width: 100%;
+        gap: 6px;
     }
 
     .num-btn {
-        background-color: rgba(var(--accent-rgb), 0.9);
+        background-color: rgba(214, 51, 132, 0.85);
         color: white;
         border: none;
-        padding: 0; /* Reset padding */
-        height: 45px; /* Hauteur fixe pour uniformité */
-        font-size: 1.3rem;
-        border-radius: 10px;
+        height: 40px; /* Moins haut */
+        border-radius: 8px;
+        font-size: 1.1rem;
         cursor: pointer;
-        box-shadow: 0 3px 5px rgba(0,0,0,0.1);
-        font-family: inherit;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.1s;
     }
-    .num-btn:active { transform: scale(0.95); background-color: var(--accent); }
-    .eraser-btn { background-color: rgba(168, 93, 119, 0.9) !important; }
+    .num-btn:active { transform: scale(0.95); }
+    .eraser-btn { background-color: #a85d77 !important; }
     
     .pencil-btn { 
-        background-color: #aaa !important; font-size: 1rem;
+        grid-column: span 5; 
+        background-color: #bbb !important; 
+        font-size: 0.9rem;
+        margin-top: 5px;
     }
     .pencil-btn.active {
-        background-color: #ffd700 !important; color: #5a2a38 !important;
-        border: 2px solid #fff;
-        box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+        background-color: #ffd700 !important; 
+        color: #333 !important;
+        font-weight: bold;
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+        border: 1px solid white;
     }
 
-    /* Modal */
+    /* MODAL VICTOIRE */
     .modal {
         display: none;
         position: fixed;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         background: rgba(255, 255, 255, 0.95);
-        padding: 30px;
+        padding: 25px;
         border-radius: 20px;
-        border: 3px solid var(--accent);
+        border: 2px solid var(--accent);
         text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         z-index: 100;
-        width: 80%;
-        max-width: 400px;
+        width: 80%; max-width: 300px;
     }
-</style>
+    </style>
 </head>
 <body>
 
     <div class="game-container">
         <h1 id="title">Sudoku</h1>
-        <div style="margin-bottom: 10px;">
-            <span id="date-display">Chargement...</span>
-        </div>
+        <div id="date-display">Chargement...</div>
 
         <div id="sudoku-board"></div>
 
@@ -212,21 +257,20 @@
             <button class="num-btn" onclick="inputNum(8)">8</button>
             <button class="num-btn" onclick="inputNum(9)">9</button>
             <button class="num-btn eraser-btn" onclick="inputNum(null)">⌫</button>
-        </div>
-        <div class="numpad" style="margin-top: 8px; grid-template-columns: 1fr;">
+            
             <button class="num-btn pencil-btn" id="pencil-btn" onclick="togglePencil()">✎ Mode Notes</button>
         </div>
     </div>
 
     <div id="win-modal" class="modal">
         <h2 style="color: var(--accent); margin-top:0;">Gagné !</h2>
-        <p id="custom-success-msg" style="font-size: 1.1em; margin: 20px 0; line-height: 1.4;">Bravo !</p> 
+        <p id="custom-success-msg" style="margin: 15px 0;">Bravo !</p> 
         <button class="num-btn" style="width:100%" onclick="location.reload()">Rejouer</button>
     </div>
 
 <script>
     // --- CONFIGURATION ---
-    const totalImagesInFolder = 5; // CHANGE CECI selon ton nombre d'images
+    const totalImagesInFolder = 20; // Mets le bon nombre d'images ici
     const dailyMessages = {
         default: "Bravo mimi, je t'aime (uniquement car tu as réussi ce sudoku). Passe une bonne journée <3"
     };
@@ -236,7 +280,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     let dayParam = parseInt(urlParams.get('day')) || 1;
 
-    // --- RNG ---
+    // --- RNG (Générateur aléatoire stable) ---
     function mulberry32(a) {
         return function() {
             var t = a += 0x6D2B79F5;
@@ -245,31 +289,27 @@
             return ((t ^ t >>> 14) >>> 0) / 4294967296;
         }
     }
-    const rng = mulberry32(dayParam + 9999); // Offset changé
+    const rng = mulberry32(dayParam + 777); 
 
-    // --- VISUELS ---
-    // Utilise le RNG pour choisir une image stable par jour
+    // --- FOND D'ÉCRAN ---
     const randomImageIndex = (Math.floor(rng() * totalImagesInFolder) % totalImagesInFolder) + 1;
-    // Note: Assure-toi que le dossier s'appelle bien 'images' et contient 1.jpg, 2.jpg etc.
-    // Si tu n'as pas d'images, commente la ligne suivante :
-    // document.body.style.backgroundImage = `url('images/${randomImageIndex}.jpg')`;
-    
-    const victoryMessage = dailyMessages[dayParam] || dailyMessages.default;
-
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + (dayParam - 1));
-    document.getElementById('date-display').innerText = currentDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-    document.getElementById('title').innerText = `Sudoku #${dayParam}`;
+    // Si tes images sont bien dans un dossier 'images' :
+    document.body.style.backgroundImage = `url('images/${randomImageIndex}.jpg')`;
 
     // --- LOGIQUE JEU ---
     let solution = [], puzzle = [], selectedCell = null;
     let notes = {}; 
     let isPencilMode = false;
 
+    // Titres
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + (dayParam - 1));
+    document.getElementById('date-display').innerText = currentDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('title').innerText = `Sudoku #${dayParam}`;
+
     function togglePencil() {
         isPencilMode = !isPencilMode;
-        const btn = document.getElementById('pencil-btn');
-        btn.classList.toggle('active', isPencilMode);
+        document.getElementById('pencil-btn').classList.toggle('active', isPencilMode);
     }
 
     function generateBoard() {
@@ -291,20 +331,14 @@
 
     function createPuzzle(solved) {
         let p = JSON.parse(JSON.stringify(solved));
-        // Difficulté HARD: On vise environ 26-28 indices restants
-        let cluesToRemove = 55; 
-        
-        // Méthode simple de retrait (suffisante pour ce projet)
+        // Difficulté HARD : on retire 55 cases
         let cells = [];
         for(let r=0; r<9; r++) for(let c=0; c<9; c++) cells.push([r,c]);
-        
-        // Mélange des cellules à retirer
         for (let i = cells.length - 1; i > 0; i--) {
             const j = Math.floor(rng() * (i + 1));
             [cells[i], cells[j]] = [cells[j], cells[i]];
         }
-        
-        for(let i=0; i<cluesToRemove; i++) {
+        for(let i=0; i<55; i++) {
             let [r,c] = cells[i];
             p[r][c] = 0;
         }
@@ -314,7 +348,8 @@
     function initGame() {
         solution = generateBoard();
         puzzle = createPuzzle(solution);
-        notes = {}; 
+        notes = {};
+        
         const boardEl = document.getElementById('sudoku-board');
         boardEl.innerHTML = '';
         
@@ -325,13 +360,17 @@
                 cell.dataset.row = r; 
                 cell.dataset.col = c;
                 
-                if ((r+1)%3===0 && r<8) cell.classList.add('border-bottom');
+                // On ajoute la classe pour la bordure épaisse du bas
+                if ((r + 1) % 3 === 0 && r < 8) {
+                    cell.classList.add('border-bottom-thick');
+                }
 
-                // Structure interne : une div pour le gros chiffre, une pour les notes
+                // Chiffre principal
                 const mainNum = document.createElement('span');
                 mainNum.className = 'main-num';
                 cell.appendChild(mainNum);
 
+                // Grille de notes
                 const notesGrid = document.createElement('div');
                 notesGrid.className = 'notes-grid';
                 cell.appendChild(notesGrid);
@@ -372,16 +411,23 @@
 
         // MODE CRAYON
         if (isPencilMode) {
+            // Si on écrit une note, on efface le gros chiffre potentiel
+            if(puzzle[r][c] !== 0) {
+                puzzle[r][c] = 0;
+                mainNumSpan.innerText = '';
+                selectedCell.classList.remove('wrong');
+            }
+
             if (!notes[key]) notes[key] = [];
             const index = notes[key].indexOf(num);
             if (index > -1) notes[key].splice(index, 1); 
             else notes[key].push(num);
             renderNotes(selectedCell, key);
         } 
-        // MODE NORMAL
+        // MODE NORMAL (Réponse)
         else {
-            delete notes[key]; 
-            renderNotes(selectedCell, key); // Efface visuellement les notes
+            delete notes[key]; // On vire les notes
+            renderNotes(selectedCell, key);
 
             mainNumSpan.innerText = num; 
             selectedCell.classList.remove('wrong');
@@ -394,8 +440,9 @@
 
     function renderNotes(cell, key) {
         const notesGrid = cell.querySelector('.notes-grid');
-        notesGrid.innerHTML = ''; // Clear
+        notesGrid.innerHTML = ''; 
         const currentNotes = notes[key] || [];
+        // On remplit les 9 cases de la grille de notes pour garder l'alignement
         for(let i=1; i<=9; i++) {
             const span = document.createElement('span');
             span.className = 'note-num';
@@ -410,13 +457,11 @@
                 if (puzzle[r][c] !== solution[r][c]) return;
             }
         }
-        document.getElementById('custom-success-msg').innerText = victoryMessage;
+        document.getElementById('custom-success-msg').innerText = dailyMessages[dayParam] || dailyMessages.default;
         document.getElementById('win-modal').style.display = 'block';
     }
 
-    // Empêcher le zoom double-tap sur iOS
     document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
-
     initGame();
 </script>
 </body>
