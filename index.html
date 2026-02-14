@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Daily Pink Sudoku</title>
     <style>
     :root {
@@ -11,11 +11,11 @@
         --highlight: #ffc2d1;
         --error: #ff4d4d;
         --text-main: #5a2a38;
-        --note-color: #5a2a38;
     }
 
     body {
         background-color: #ffe6ea; 
+        /* background-image généré en JS */
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
@@ -24,24 +24,28 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center; /* Centre verticalement si l'écran est grand */
         min-height: 100vh;
         margin: 0;
-        padding: 20px;
+        padding: 10px;
         box-sizing: border-box;
+        /* Empêche le zoom sur mobile au double tap */
+        touch-action: manipulation; 
     }
 
     .game-container {
-        background-color: rgba(255, 255, 255, 0.75);
+        background-color: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(10px); 
         -webkit-backdrop-filter: blur(10px);
-        padding: 25px;
+        padding: 20px;
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.5);
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
         display: flex;
         flex-direction: column;
         align-items: center;
-        max-width: 95%;
+        width: 100%;
+        max-width: 450px;
     }
 
     h1 {
@@ -49,76 +53,84 @@
         text-transform: uppercase;
         letter-spacing: 2px;
         margin-top: 0;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        font-size: 1.5rem;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        margin-bottom: 5px;
     }
+    
+    #date-display { font-weight: bold; font-size: 0.9rem; }
 
+    /* --- GRILLE --- */
     #sudoku-board {
         display: grid;
         grid-template-columns: repeat(9, 1fr);
+        /* grid-template-rows est inutile si les cellules ont aspect-ratio: 1 */
         gap: 0; 
         background-color: transparent;
-        border: 2px solid rgba(var(--accent-rgb), 0.5);
-        border-radius: 12px;
+        border: 3px solid var(--accent); /* Bordure extérieure plus épaisse */
+        border-radius: 4px;
         overflow: hidden;
         box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.2);
         width: 100%;
-        max-width: 450px;
-        aspect-ratio: 1;
-        margin: 20px 0;
+        /* Force le conteneur à être carré */
+        aspect-ratio: 1 / 1;
+        margin: 15px 0;
     }
 
     .cell {
-        background-color: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(3px);
+        /* LA CORRECTION EST ICI : Force chaque cellule à être carrée */
+        aspect-ratio: 1 / 1; 
+        
+        background-color: rgba(255, 255, 255, 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3rem;
+        font-size: 1.4rem; /* Gros chiffres */
         font-weight: bold;
         cursor: pointer;
         user-select: none;
         color: var(--text-main);
-        border-right: 1px solid rgba(var(--accent-rgb), 0.2);
-        border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
-        position: relative; /* Pour les notes */
-        transition: background-color 0.2s ease;
+        border-right: 1px solid rgba(var(--accent-rgb), 0.3);
+        border-bottom: 1px solid rgba(var(--accent-rgb), 0.3);
+        position: relative;
+        transition: background-color 0.1s ease;
+        overflow: hidden; /* Empêche tout débordement */
     }
 
     /* --- BORDURES ÉPAISSES (CORRIGÉES) --- */
-    .cell:nth-child(3n) { border-right: 2px solid rgba(var(--accent-rgb), 0.7) !important; }
+    .cell:nth-child(3n) { border-right: 3px solid var(--accent) !important; }
     .cell:nth-child(9n) { border-right: none !important; }
-    .cell.border-bottom { border-bottom: 2px solid rgba(var(--accent-rgb), 0.7) !important; }
-    /* La dernière ligne n'a pas besoin de bordure en bas */
+    .cell.border-bottom { border-bottom: 3px solid var(--accent) !important; }
     .cell[data-row="8"] { border-bottom: none !important; }
 
     .cell.fixed { 
-        color: var(--text-main); 
-        background-color: rgba(255, 240, 245, 0.6); 
-        font-weight: 900;
+        color: #333; 
+        background-color: rgba(230, 230, 230, 0.5); 
     }
 
     .cell.selected { 
-        background-color: rgba(255, 194, 209, 0.6); 
-        box-shadow: inset 0 0 10px rgba(var(--accent-rgb), 0.3);
+        background-color: rgba(255, 194, 209, 0.8) !important; 
     }
 
     .cell.wrong { 
         color: var(--error);
-        text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+        background-color: rgba(255, 0, 0, 0.1);
     }
 
     /* --- STYLE DES NOTES (Crayon) --- */
     .notes-grid {
         position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
+        top: 1px; left: 1px; right: 1px; bottom: 1px;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(3, 1fr);
         pointer-events: none;
     }
     .note-num {
-        font-size: 0.6rem; /* Tout petit */
-        color: #888;
+        /* CORRECTION TAILLE NOTES */
+        font-size: 9px; 
+        line-height: 1;
+        color: #777;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -131,39 +143,34 @@
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         gap: 8px;
-        max-width: 450px;
         width: 100%;
     }
 
     .num-btn {
-        background-color: rgba(var(--accent-rgb), 0.85);
+        background-color: rgba(var(--accent-rgb), 0.9);
         color: white;
-        border: 1px solid rgba(255,255,255,0.3);
-        padding: 12px 0; /* Ajusté */
-        font-size: 1.2rem;
-        border-radius: 12px;
+        border: none;
+        padding: 0; /* Reset padding */
+        height: 45px; /* Hauteur fixe pour uniformité */
+        font-size: 1.3rem;
+        border-radius: 10px;
         cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: transform 0.1s, background-color 0.2s;
+        box-shadow: 0 3px 5px rgba(0,0,0,0.1);
         font-family: inherit;
         display: flex;
         align-items: center;
         justify-content: center;
     }
-
-    .num-btn:active { transform: scale(0.95); }
-    .eraser-btn { background-color: rgba(168, 93, 119, 0.85) !important; }
+    .num-btn:active { transform: scale(0.95); background-color: var(--accent); }
+    .eraser-btn { background-color: rgba(168, 93, 119, 0.9) !important; }
     
-    /* Bouton Crayon */
     .pencil-btn { 
-        background-color: #b0b0b0 !important; 
-        font-size: 1rem;
+        background-color: #aaa !important; font-size: 1rem;
     }
     .pencil-btn.active {
-        background-color: #ffd700 !important; /* Doré quand actif */
-        color: #5a2a38 !important;
+        background-color: #ffd700 !important; color: #5a2a38 !important;
         border: 2px solid #fff;
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
     }
 
     /* Modal */
@@ -172,21 +179,15 @@
         position: fixed;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(15px);
-        padding: 40px;
-        border-radius: 25px;
-        border: 2px solid var(--accent);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 20px;
+        border: 3px solid var(--accent);
         text-align: center;
-        box-shadow: 0 15px 35px rgba(214, 51, 132, 0.4);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         z-index: 100;
-        max-width: 85%;
-        animation: popIn 0.4s ease-out;
-    }
-    
-    @keyframes popIn {
-        from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); }
-        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        width: 80%;
+        max-width: 400px;
     }
 </style>
 </head>
@@ -194,7 +195,7 @@
 
     <div class="game-container">
         <h1 id="title">Sudoku</h1>
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 10px;">
             <span id="date-display">Chargement...</span>
         </div>
 
@@ -212,20 +213,20 @@
             <button class="num-btn" onclick="inputNum(9)">9</button>
             <button class="num-btn eraser-btn" onclick="inputNum(null)">⌫</button>
         </div>
-        <div class="numpad" style="margin-top: 5px; grid-template-columns: 1fr;">
-            <button class="num-btn pencil-btn" id="pencil-btn" onclick="togglePencil()">✎ Mode Crayon</button>
+        <div class="numpad" style="margin-top: 8px; grid-template-columns: 1fr;">
+            <button class="num-btn pencil-btn" id="pencil-btn" onclick="togglePencil()">✎ Mode Notes</button>
         </div>
     </div>
 
     <div id="win-modal" class="modal">
-        <h2 style="color: var(--accent);">Gagné !</h2>
-        <p id="custom-success-msg" style="font-size: 1.1em; margin: 20px 0;">Bravo !</p> 
-        <button class="num-btn" onclick="location.reload()">Rejouer</button>
+        <h2 style="color: var(--accent); margin-top:0;">Gagné !</h2>
+        <p id="custom-success-msg" style="font-size: 1.1em; margin: 20px 0; line-height: 1.4;">Bravo !</p> 
+        <button class="num-btn" style="width:100%" onclick="location.reload()">Rejouer</button>
     </div>
 
 <script>
     // --- CONFIGURATION ---
-    const totalImagesInFolder = 20; 
+    const totalImagesInFolder = 5; // CHANGE CECI selon ton nombre d'images
     const dailyMessages = {
         default: "Bravo mimi, je t'aime (uniquement car tu as réussi ce sudoku). Passe une bonne journée <3"
     };
@@ -244,28 +245,31 @@
             return ((t ^ t >>> 14) >>> 0) / 4294967296;
         }
     }
-    const rng = mulberry32(dayParam + 2026);
+    const rng = mulberry32(dayParam + 9999); // Offset changé
 
     // --- VISUELS ---
-    const randomImageIndex = Math.floor(rng() * totalImagesInFolder) + 1;
-    document.body.style.backgroundImage = `url('images/${randomImageIndex}.jpg')`;
+    // Utilise le RNG pour choisir une image stable par jour
+    const randomImageIndex = (Math.floor(rng() * totalImagesInFolder) % totalImagesInFolder) + 1;
+    // Note: Assure-toi que le dossier s'appelle bien 'images' et contient 1.jpg, 2.jpg etc.
+    // Si tu n'as pas d'images, commente la ligne suivante :
+    // document.body.style.backgroundImage = `url('images/${randomImageIndex}.jpg')`;
+    
     const victoryMessage = dailyMessages[dayParam] || dailyMessages.default;
 
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + (dayParam - 1));
     document.getElementById('date-display').innerText = currentDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-    document.getElementById('title').innerText = `Jeu n°${dayParam}`;
+    document.getElementById('title').innerText = `Sudoku #${dayParam}`;
 
     // --- LOGIQUE JEU ---
     let solution = [], puzzle = [], selectedCell = null;
-    let notes = {}; // Stocke les notes par index "r-c" : "0-1" -> [1, 9]
+    let notes = {}; 
     let isPencilMode = false;
 
     function togglePencil() {
         isPencilMode = !isPencilMode;
         const btn = document.getElementById('pencil-btn');
-        if (isPencilMode) btn.classList.add('active');
-        else btn.classList.remove('active');
+        btn.classList.toggle('active', isPencilMode);
     }
 
     function generateBoard() {
@@ -287,22 +291,22 @@
 
     function createPuzzle(solved) {
         let p = JSON.parse(JSON.stringify(solved));
-        let clues = 81;
-        const targetClues = 27; 
-        let attempts = 300; 
-
-        while (clues > targetClues && attempts > 0) {
-            let r = Math.floor(rng() * 9);
-            let c = Math.floor(rng() * 9);
-            let symR = 8 - r; let symC = 8 - c;
-
-            if (p[r][c] !== 0) {
-                p[r][c] = 0; clues--;
-                if (r !== symR || c !== symC) {
-                    if (p[symR][symC] !== 0) { p[symR][symC] = 0; clues--; }
-                }
-            }
-            attempts--;
+        // Difficulté HARD: On vise environ 26-28 indices restants
+        let cluesToRemove = 55; 
+        
+        // Méthode simple de retrait (suffisante pour ce projet)
+        let cells = [];
+        for(let r=0; r<9; r++) for(let c=0; c<9; c++) cells.push([r,c]);
+        
+        // Mélange des cellules à retirer
+        for (let i = cells.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [cells[i], cells[j]] = [cells[j], cells[i]];
+        }
+        
+        for(let i=0; i<cluesToRemove; i++) {
+            let [r,c] = cells[i];
+            p[r][c] = 0;
         }
         return p;
     }
@@ -310,7 +314,7 @@
     function initGame() {
         solution = generateBoard();
         puzzle = createPuzzle(solution);
-        notes = {}; // Reset notes
+        notes = {}; 
         const boardEl = document.getElementById('sudoku-board');
         boardEl.innerHTML = '';
         
@@ -318,24 +322,25 @@
             for (let c = 0; c < 9; c++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
-                // IMPORTANTE CORRECTION : On ne touche pas au dataset pour le style
                 cell.dataset.row = r; 
                 cell.dataset.col = c;
                 
-                // On utilise une classe CSS pour la bordure du bas
-                if ((r+1)%3===0 && r<8) {
-                    cell.classList.add('border-bottom');
-                }
+                if ((r+1)%3===0 && r<8) cell.classList.add('border-bottom');
+
+                // Structure interne : une div pour le gros chiffre, une pour les notes
+                const mainNum = document.createElement('span');
+                mainNum.className = 'main-num';
+                cell.appendChild(mainNum);
+
+                const notesGrid = document.createElement('div');
+                notesGrid.className = 'notes-grid';
+                cell.appendChild(notesGrid);
 
                 if (puzzle[r][c] !== 0) {
-                    cell.innerText = puzzle[r][c];
+                    mainNum.innerText = puzzle[r][c];
                     cell.classList.add('fixed');
                 } else {
                     cell.addEventListener('click', () => selectCell(cell));
-                    // Création du conteneur de notes (vide au début)
-                    const notesGrid = document.createElement('div');
-                    notesGrid.className = 'notes-grid';
-                    cell.appendChild(notesGrid);
                 }
                 boardEl.appendChild(cell);
             }
@@ -349,17 +354,17 @@
     }
 
     function inputNum(num) {
-        if (!selectedCell) return;
+        if (!selectedCell || selectedCell.classList.contains('fixed')) return;
         const r = parseInt(selectedCell.dataset.row);
         const c = parseInt(selectedCell.dataset.col);
         const key = `${r}-${c}`;
+        const mainNumSpan = selectedCell.querySelector('.main-num');
 
         // GOMME
         if (num === null) {
-            selectedCell.childNodes[0].nodeValue = ''; // Efface le gros chiffre
+            mainNumSpan.innerText = '';
             puzzle[r][c] = 0;
             selectedCell.classList.remove('wrong');
-            // On efface aussi les notes
             delete notes[key];
             renderNotes(selectedCell, key);
             return;
@@ -369,36 +374,18 @@
         if (isPencilMode) {
             if (!notes[key]) notes[key] = [];
             const index = notes[key].indexOf(num);
-            
-            if (index > -1) {
-                notes[key].splice(index, 1); // Enlever si existe
-            } else {
-                notes[key].push(num); // Ajouter si existe pas
-            }
+            if (index > -1) notes[key].splice(index, 1); 
+            else notes[key].push(num);
             renderNotes(selectedCell, key);
         } 
         // MODE NORMAL
         else {
-            // Efface les notes car on met un vrai chiffre
             delete notes[key]; 
-            renderNotes(selectedCell, key); // Refresh pour vider
+            renderNotes(selectedCell, key); // Efface visuellement les notes
 
-            // Met à jour le gros chiffre
-            // Attention: selectedCell a un enfant .notes-grid. 
-            // On veut modifier le texte principal du noeud, pas supprimer l'enfant.
-            // Une façon sûre : vider, remettre la grid, mettre le texte.
-            
+            mainNumSpan.innerText = num; 
             selectedCell.classList.remove('wrong');
             
-            // On écrit le chiffre
-            // Astuce: On met le chiffre dans un span ou directement texte, 
-            // mais il faut garder la div .notes-grid présente
-            
-            // Le plus simple : Reconstruire le contenu de la cell
-            const notesGrid = selectedCell.querySelector('.notes-grid');
-            selectedCell.innerText = num; 
-            selectedCell.appendChild(notesGrid); // On remet la grille de notes (vide)
-
             puzzle[r][c] = num;
             if (num !== solution[r][c]) selectedCell.classList.add('wrong');
             else checkWin();
@@ -408,16 +395,11 @@
     function renderNotes(cell, key) {
         const notesGrid = cell.querySelector('.notes-grid');
         notesGrid.innerHTML = ''; // Clear
-        
         const currentNotes = notes[key] || [];
-        
-        // On crée 9 slots invisibles pour que les chiffres soient bien placés
         for(let i=1; i<=9; i++) {
             const span = document.createElement('span');
             span.className = 'note-num';
-            if(currentNotes.includes(i)) {
-                span.innerText = i;
-            }
+            if(currentNotes.includes(i)) span.innerText = i;
             notesGrid.appendChild(span);
         }
     }
@@ -431,6 +413,9 @@
         document.getElementById('custom-success-msg').innerText = victoryMessage;
         document.getElementById('win-modal').style.display = 'block';
     }
+
+    // Empêcher le zoom double-tap sur iOS
+    document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
 
     initGame();
 </script>
